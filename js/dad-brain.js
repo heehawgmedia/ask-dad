@@ -87,6 +87,16 @@
     return matches;
   }
 
+  function realTipsFor(topics) {
+    const tips = [];
+    for (let i = 0; tips.length < 2; i++) {
+      const round = topics.filter((t) => t.realTips && t.realTips[i]).map((t) => t.realTips[i]);
+      if (!round.length) break;
+      tips.push(...round);
+    }
+    return tips.slice(0, 2);
+  }
+
   // Fill {placeholders}. Runs twice so placeholders inside lists (e.g. an
   // item that mentions {year}) get filled too.
   function fill(template, ctx, rand) {
@@ -144,8 +154,9 @@
       closer: f(pick(data.closers, rand)),
       signoff: f(pick(data.signoffs, rand)),
       lesson: f(pick(data.lessons, rand)),
-      // Real, non-satirical advice for recognised topics (shown under the Real Answer).
-      realTips: topics.flatMap((t) => t.realTips || []).slice(0, 2),
+      // Real, non-satirical advice for recognised topics (shown under the Real
+      // Answer). One tip per matched topic first, so "buy a car" gets a car tip.
+      realTips: realTipsFor(topics),
       confidence: 100 + Math.floor(rand() * 400),
       resultCount: (Math.floor(rand() * 9000) + 1000).toLocaleString() + ",000,000",
       facts: shuffle(data.facts, rand).slice(0, 3).map(f),
