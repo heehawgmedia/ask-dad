@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ask Dad</title>
+  <meta name="description" content="The open source search engine that knows everything. (It doesn't.)">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-mode="dad">
+  <header class="topbar">
+    <label class="mode-toggle" title="Switch between Dad answers and real search results">
+      <span class="mode-label mode-label-dad">Dad Mode</span>
+      <input type="checkbox" id="mode-toggle" role="switch" aria-label="Real search mode">
+      <span class="switch" aria-hidden="true"></span>
+      <span class="mode-label mode-label-real">Real Search</span>
+    </label>
+  </header>
+
+  <main>
+    <section class="hero" id="hero">
+      <h1 class="logo" aria-label="Ask Dad">
+        <span>A</span><span>s</span><span>k</span>&nbsp;<span>D</span><span>a</span><span>d</span>
+      </h1>
+      <p class="tagline" id="tagline">Confidently wrong since 1987.</p>
+      <form id="search-form" class="search" role="search" autocomplete="off">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input id="q" name="q" type="search" placeholder="Ask Dad anything..." aria-label="Your question" required>
+        </div>
+        <div class="buttons">
+          <button type="submit" id="ask-btn">Ask Dad</button>
+          <button type="button" id="lucky-btn">I'm Feeling Grounded</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="results" class="results" aria-live="polite"></section>
+  </main>
+
+  <footer class="footer">
+    <p id="footer-note">Dad Mode: every answer is 100% satire. Do not use for homework, taxes, or surgery.</p>
+    <p class="footer-small">Ask Dad is open source · MIT License</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="js/responses.js"></script>
+  <script src="js/dad-brain.js"></script>
+  <script src="js/real-search.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
