@@ -1,7 +1,7 @@
 /*
- * Ask Dad — UI glue: the mode toggle, the search box, and rendering results.
- * Everything is rendered with textContent, never innerHTML, so questions and
- * API results can't inject markup.
+ * Ask Dad — UI glue: the mode toggle, the home page, the search box, and
+ * rendering results. Everything is rendered with textContent, never
+ * innerHTML, so questions and API results can't inject markup.
  */
 (function (AskDad) {
   "use strict";
@@ -18,7 +18,13 @@
     tagline: $("tagline"),
     footer: $("footer-note"),
     toast: $("toast"),
-    logo: document.querySelector(".logo")
+    logo: document.querySelector(".logo"),
+    fact: $("home-fact"),
+    factBtn: $("fact-btn"),
+    jokeSetup: $("joke-setup"),
+    jokePunchline: $("joke-punchline"),
+    jokeReveal: $("joke-reveal"),
+    jokeBtn: $("joke-btn")
   };
 
   const MODE_KEY = "askdad.mode";
@@ -37,7 +43,8 @@
     attempt: 0,
     token: 0,
     timer: null,
-    controller: null
+    controller: null,
+    realCache: new Map()
   };
 
   // ---------- small helpers ----------
@@ -93,13 +100,48 @@
     state.controller = null;
   }
 
+  function spinnerLine(text, className) {
+    return el("div", { class: className }, [
+      el("span", { class: "spinner", "aria-hidden": "true" }),
+      el("span", { text })
+    ]);
+  }
+
   function showThinking(text) {
-    els.results.replaceChildren(
-      el("div", { class: "thinking" }, [
-        el("span", { class: "spinner", "aria-hidden": "true" }),
-        el("span", { text })
-      ])
-    );
+    els.results.replaceChildren(spinnerLine(text, "thinking"));
+  }
+
+  // ---------- home page ----------
+
+  function showFact() {
+    els.fact.textContent = AskDad.brain.homeFact();
+  }
+
+  function showJoke() {
+    const joke = AskDad.brain.dadJoke();
+    els.jokeSetup.textContent = joke.setup;
+    els.jokePunchline.textContent = joke.punchline;
+    els.jokePunchline.hidden = true;
+    els.jokeReveal.hidden = false;
+  }
+
+  function revealPunchline() {
+    els.jokePunchline.hidden = false;
+    els.jokeReveal.hidden = true;
+    els.jokeBtn.focus();
+  }
+
+  function goHome() {
+    cancelPending();
+    state.token++;
+    state.question = "";
+    els.input.value = "";
+    els.results.replaceChildren();
+    document.body.classList.remove("has-results");
+    updateUrl();
+    showFact();
+    showJoke();
+    els.input.focus();
   }
 
   // ---------- mode ----------
@@ -114,11 +156,11 @@
     els.ask.textContent = real ? "Search" : "Ask Dad";
     els.lucky.textContent = real ? "Open in DuckDuckGo" : "I'm Feeling Grounded";
     els.tagline.textContent = real
-      ? "Real answers. Dad is supervising from the recliner."
+      ? "Real answers only. Dad is supervising from the recliner."
       : AskDad.brain.randomTagline();
     els.footer.textContent = real
       ? "Real Search: results come from Wikipedia. Engine buttons open that search engine in a new tab."
-      : "Dad Mode: every answer is 100% satire. Do not use for homework, taxes, or surgery.";
+      : "Dad Mode: Dad's answer is 100% satire. The real answer is right underneath it.";
 
     storageSet(MODE_KEY, state.mode);
 
@@ -147,50 +189,101 @@
     else runDad(question, token);
   }
 
+  // Resolves to { data } or { error: true }, or null if the request was
+  // cancelled. Successful lookups are cached so "Ask again" and switching
+  // modes don't hit Wikipedia twice.
+  function fetchReal(question) {
+    const terms = AskDad.brain.searchTerms(question);
+    const key = terms.toLowerCase();
+    if (state.realCache.has(key)) return Promise.resolve({ data: state.realCache.get(key) });
+
+    const controller = new AbortController();
+    state.controller = controller;
+    return AskDad.realSearch.search(terms, controller.signal)
+      .then((data) => {
+        state.realCache.set(key, data);
+        return { data };
+      })
+      .catch((err) => (err.name === "AbortError" ? null : { error: true }));
+  }
+
   function runDad(question, token) {
     showThinking(AskDad.brain.thinkingLine());
+    const realPromise = fetchReal(question); // fetch the real answer while Dad "thinks"
+
     state.timer = setTimeout(() => {
       if (token !== state.token) return;
-      renderDad(AskDad.brain.answer(question, state.attempt));
+      const answer = AskDad.brain.answer(question, state.attempt);
+      const realSlot = renderDad(answer);
+      realPromise.then((result) => {
+        if (result && token === state.token) fillRealAnswer(realSlot, question, result, answer.realTips);
+      });
     }, 500 + Math.random() * 700);
   }
 
   async function runReal(question, token) {
     showThinking("Searching Wikipedia...");
-    const controller = new AbortController();
-    state.controller = controller;
-    try {
-      const data = await AskDad.realSearch.search(question, controller.signal);
-      if (token === state.token) renderReal(question, data);
-    } catch (err) {
-      if (err.name === "AbortError" || token !== state.token) return;
-      renderRealError(question);
-    }
+    const result = await fetchReal(question);
+    if (!result || token !== state.token) return;
+    if (result.error) renderRealError(question);
+    else renderReal(question, result.data);
+  }
+
+  // ---------- shared real-result pieces ----------
+
+  function summaryBlock(s) {
+    return el("div", { class: "summary" }, [
+      s.thumbnail ? el("img", { src: s.thumbnail, alt: "" }) : null,
+      el("div", null, [el("h3", { text: s.title }), el("p", { text: s.extract })])
+    ]);
+  }
+
+  function engineButtons(question) {
+    return el("div", { class: "engines" },
+      AskDad.realSearch.engines.map((engine) =>
+        externalLink(AskDad.realSearch.engineUrl(engine, question), `${engine.name} ↗`, "btn")
+      )
+    );
+  }
+
+  function engineRow(question) {
+    return el("div", { class: "engines-row" }, [
+      el("span", { text: "Search the web:" }),
+      ...AskDad.realSearch.engines.map((engine) =>
+        externalLink(AskDad.realSearch.engineUrl(engine, question), `${engine.name} ↗`, "btn")
+      )
+    ]);
   }
 
   // ---------- rendering: Dad Mode ----------
 
+  // Renders Dad's answer and returns the (still loading) Real Answer card.
   function renderDad(a) {
     const answerCard = el("section", { class: "card", "aria-label": "Dad's answer" }, [
-      el("h2", { text: "Dad's Answer" }),
+      el("h2", { text: "👨 Dad's Answer" }),
       el("p", { class: "dad-answer", text: `${a.opener} ${a.body} ${a.closer}` }),
       el("p", { class: "signoff", text: a.signoff }),
+      el("p", { class: "lesson" }, [el("strong", { text: "Dad's life lesson: " }), a.lesson]),
       el("div", { class: "confidence" }, [
         el("span", { text: "Confidence:" }),
         el("div", { class: "meter" }, el("div", { class: "meter-fill" })),
         el("strong", { text: `${a.confidence}%` })
       ]),
       el("div", { class: "card-actions" }, [
-        el("button", { type: "button", class: "btn", text: "🔁 Ask again", onclick: () => run(state.question, { again: true }) }),
-        el("button", { type: "button", class: "btn", text: "🔎 Get a real answer", onclick: () => setMode("real") })
+        el("button", { type: "button", class: "btn", text: "🔁 Ask again", onclick: () => run(state.question, { again: true }) })
       ])
     ]);
 
-    const facts = el("ul", { class: "facts" }, a.facts.map((fact) => el("li", { text: fact })));
+    const realSlot = el("section", { class: "card real-answer", "aria-label": "The real answer", "aria-busy": "true" }, [
+      el("h2", { text: "✅ The Real Answer" }),
+      spinnerLine("Finding out what Dad should have said...", "card-loading")
+    ]);
 
     const alsoAsk = el("div", { class: "also-ask" },
       a.alsoAsk.map((q) => el("button", { type: "button", text: q, onclick: () => run(q) }))
     );
+
+    const facts = el("ul", { class: "facts" }, a.facts.map((fact) => el("li", { text: fact })));
 
     const results = a.results.map((r) =>
       el("article", { class: "result" }, [
@@ -208,24 +301,53 @@
     els.results.replaceChildren(
       el("p", { class: "stats", text: `About ${a.resultCount} results (0.00 seconds of actual thought)` }),
       answerCard,
-      el("h3", { class: "section-title", text: "Dad Facts™" }),
-      facts,
+      realSlot,
       el("h3", { class: "section-title", text: "People also ask Dad" }),
       alsoAsk,
-      el("h3", { class: "section-title", text: "Top results" }),
+      el("h3", { class: "section-title", text: "Dad Facts™" }),
+      facts,
+      el("h3", { class: "section-title", text: "Dad's top results" }),
+      el("p", { class: "satire-note", text: "These websites are made up. Dad is not a reliable source." }),
       ...results
     );
+
+    return realSlot;
+  }
+
+  function fillRealAnswer(slot, question, result, tips) {
+    const children = [el("h2", { text: "✅ The Real Answer" })];
+
+    if (tips.length) {
+      children.push(
+        el("div", { class: "real-tips" }, [
+          el("h3", { text: "Practical advice" }),
+          el("ul", null, tips.map((tip) => el("li", { text: tip })))
+        ])
+      );
+    }
+
+    const summary = result.data && result.data.summary;
+    if (summary) {
+      children.push(summaryBlock(summary));
+    } else if (result.error) {
+      children.push(el("p", { class: "notice", text: "Couldn't reach Wikipedia for the real answer. Are you offline?" }));
+    } else if (!tips.length) {
+      children.push(el("p", { class: "notice", text: "Dad doesn't know, and this time neither does Wikipedia. Try a search engine below." }));
+    }
+
+    children.push(
+      el("div", { class: "card-actions" }, [
+        summary ? externalLink(summary.url, "Read more on Wikipedia ↗", "btn") : null,
+        el("button", { type: "button", class: "btn", text: "🔎 All real results", onclick: () => setMode("real") })
+      ]),
+      engineRow(question)
+    );
+
+    slot.removeAttribute("aria-busy");
+    slot.replaceChildren(...children);
   }
 
   // ---------- rendering: Real Search ----------
-
-  function engineButtons(question) {
-    return el("div", { class: "engines" },
-      AskDad.realSearch.engines.map((engine) =>
-        externalLink(AskDad.realSearch.engineUrl(engine, question), `${engine.name} ↗`, "btn")
-      )
-    );
-  }
 
   function dadButton() {
     return el("div", { class: "card-actions" }, [
@@ -242,15 +364,11 @@
     ];
 
     if (data.summary) {
-      const s = data.summary;
       nodes.push(
         el("section", { class: "card", "aria-label": "Quick answer" }, [
           el("h2", { text: "Quick answer · Wikipedia" }),
-          el("div", { class: "summary" }, [
-            s.thumbnail ? el("img", { src: s.thumbnail, alt: "" }) : null,
-            el("div", null, [el("h3", { text: s.title }), el("p", { text: s.extract })])
-          ]),
-          el("div", { class: "card-actions" }, [externalLink(s.url, "Read on Wikipedia ↗", "btn")])
+          summaryBlock(data.summary),
+          el("div", { class: "card-actions" }, [externalLink(data.summary.url, "Read on Wikipedia ↗", "btn")])
         ])
       );
     }
@@ -311,16 +429,10 @@
     window.open(AskDad.realSearch.engineUrl(AskDad.realSearch.engines[0], q), "_blank", "noopener");
   });
 
-  els.logo.addEventListener("click", () => {
-    cancelPending();
-    state.token++;
-    state.question = "";
-    els.input.value = "";
-    els.results.replaceChildren();
-    document.body.classList.remove("has-results");
-    updateUrl();
-    els.input.focus();
-  });
+  els.logo.addEventListener("click", goHome);
+  els.factBtn.addEventListener("click", showFact);
+  els.jokeBtn.addEventListener("click", showJoke);
+  els.jokeReveal.addEventListener("click", revealPunchline);
 
   // Press "/" anywhere to jump to the search box.
   document.addEventListener("keydown", (event) => {
@@ -336,6 +448,8 @@
   const urlMode = params.get("mode");
   const initialMode = urlMode === "real" || urlMode === "dad" ? urlMode : storageGet(MODE_KEY) || "dad";
   setMode(initialMode, { silent: true });
+  showFact();
+  showJoke();
 
   const initialQuestion = params.get("q");
   if (initialQuestion) run(initialQuestion);

@@ -34,6 +34,25 @@
           <button type="button" id="lucky-btn">I'm Feeling Grounded</button>
         </div>
       </form>
+
+      <div class="home-extras" id="home-extras">
+        <section class="home-card" aria-labelledby="fact-title">
+          <h2 id="fact-title">📋 Dad Fact</h2>
+          <p id="home-fact" class="home-text"></p>
+          <div class="card-actions">
+            <button type="button" class="btn" id="fact-btn">Another fact</button>
+          </div>
+        </section>
+        <section class="home-card" aria-labelledby="joke-title">
+          <h2 id="joke-title">😂 Dad Joke</h2>
+          <p id="joke-setup" class="home-text"></p>
+          <p id="joke-punchline" class="punchline" hidden></p>
+          <div class="card-actions">
+            <button type="button" class="btn" id="joke-reveal">Tell me</button>
+            <button type="button" class="btn" id="joke-btn">Another joke</button>
+          </div>
+        </section>
+      </div>
     </section>
 
     <section id="results" class="results" aria-live="polite"></section>

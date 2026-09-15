@@ -99,7 +99,10 @@
       relative: () => pick(data.relatives, rand),
       item: () => pick(data.items, rand),
       Item: () => capitalise(pick(data.items, rand)),
-      tool: () => pick(data.tools, rand)
+      tool: () => pick(data.tools, rand),
+      chore: () => pick(data.chores, rand),
+      Chore: () => capitalise(pick(data.chores, rand)),
+      price: () => pick(data.prices, rand)
     };
     let out = template;
     for (let pass = 0; pass < 2; pass++) {
@@ -140,17 +143,37 @@
       body: f(body),
       closer: f(pick(data.closers, rand)),
       signoff: f(pick(data.signoffs, rand)),
+      lesson: f(pick(data.lessons, rand)),
+      // Real, non-satirical advice for recognised topics (shown under the Real Answer).
+      realTips: topics.flatMap((t) => t.realTips || []).slice(0, 2),
       confidence: 100 + Math.floor(rand() * 400),
       resultCount: (Math.floor(rand() * 9000) + 1000).toLocaleString() + ",000,000",
       facts: shuffle(data.facts, rand).slice(0, 3).map(f),
       alsoAsk: shuffle(data.alsoAsk, rand).slice(0, 4).map(f),
       results: shuffle(data.fakeSites, rand).slice(0, 5).map((s) => ({
-        site: s.site,
         url: fill(s.url, slugCtx, rand),
         title: f(s.title),
         snippet: f(s.snippet)
       }))
     };
+  }
+
+  // Words that start a question but don't describe its subject. Stripping them
+  // stops Wikipedia matching "How I Met Your Mother" for "How do I save money?".
+  const LEADING_FILLER = new Set([
+    "why", "how", "what", "whats", "when", "where", "who", "whos", "which",
+    "is", "are", "am", "was", "were", "do", "does", "did", "can", "could", "should",
+    "would", "will", "has", "have", "i", "you", "we", "my", "your", "our", "a", "an", "the",
+    "to", "it", "its", "get", "make", "be", "go", "there", "really", "please", "dad", "me"
+  ]);
+
+  // Turn a question into terms suited to an encyclopedia search.
+  function searchTerms(question) {
+    const wordList = words(question);
+    let start = 0;
+    while (start < wordList.length - 1 && LEADING_FILLER.has(wordList[start])) start++;
+    const terms = wordList.slice(start).join(" ");
+    return terms || question.trim();
   }
 
   function thinkingLine() {
@@ -166,5 +189,22 @@
     return pick(data.luckyQuestions, Math.random);
   }
 
-  AskDad.brain = { answer, thinkingLine, randomTagline, luckyQuestion };
+  // Random pick that never repeats the previous one, for "Another one" buttons.
+  const lastPicked = {};
+  function pickFresh(key, list) {
+    let i = Math.floor(Math.random() * list.length);
+    if (list.length > 1 && i === lastPicked[key]) i = (i + 1) % list.length;
+    lastPicked[key] = i;
+    return list[i];
+  }
+
+  function homeFact() {
+    return fill(pickFresh("fact", data.homeFacts), { topic: "that" }, Math.random);
+  }
+
+  function dadJoke() {
+    return pickFresh("joke", data.jokes);
+  }
+
+  AskDad.brain = { answer, searchTerms, thinkingLine, randomTagline, luckyQuestion, homeFact, dadJoke };
 })(window.AskDad);
