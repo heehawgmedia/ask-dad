@@ -112,6 +112,67 @@ AskDad.data = {
     ]
   },
 
+  // Canned answers for the classics. Each regex is tested against the
+  // lowercase question and the first match wins, before any topic matching.
+  specials: [
+    { match: /are we there yet/, answers: [
+      "No. And every time you ask, it's ten more minutes. That's not a rule, that's physics.",
+      "We'll get there when we get there. I've been saying that since {year} and I've never once been wrong."
+    ] },
+    { match: /\bhungry\b|what'?s for dinner|whats for dinner|can we (get|order) (pizza|takeout|food)/, answers: [
+      "Hi Hungry, I'm Dad. Dinner is whatever's on the grill, and the grill is whatever I found in the freezer.",
+      "We have food at home. It's called leftovers, and it builds character."
+    ] },
+    { match: /(can|could) i (have|get|borrow) (some |any )?(money|cash|\$)|lend me|give me (some )?money|allowance/, answers: [
+      "Money? Sure. It's in the backyard, under the leaves. Rake them up and you'll find it. That's called a job.",
+      "You get an allowance: you're allowed to live here, eat here, and use my Wi-Fi. That's the allowance."
+    ] },
+    { match: /(can|could) i (borrow|take|use|have) the (car|truck|keys)/, answers: [
+      "The car? Have you seen the price of gas? You can borrow the lawn mower. It needs to go around the yard a few times anyway."
+    ] },
+    { match: /where('?s| is| are) (the|my) (remote|keys|phone|charger)/, answers: [
+      "Wherever you left it. Things don't just walk away. Check the couch cushions, and while you're down there, grab the {number} cents I dropped in {year}."
+    ] },
+    { match: /(can|could) i (stay up|go out|go to|sleep over|have a sleepover)/, answers: [
+      "We'll see. Which, as you know, means no. Ask your mother, which also means no, but takes longer."
+    ] },
+    { match: /i'?m bored|im bored|nothing to do|what (should|can) i do/, answers: [
+      "Bored? I've got {number} things you can do. The gutters, the garage, the lawn, and that's just the first three.",
+      "Only boring people get bored. Interesting people {chore}."
+    ] },
+    { match: /thermostat|turn (up|on|down) the (heat|ac|air|heater)|it'?s (too )?(cold|hot) in here/, answers: [
+      "The thermostat stays at 68. Cold? Put on a sweater. Hot? Take off the sweater. That's the system, and the system works.",
+      "Nobody touches the thermostat. Not you, not your mother, not {relative}. I have it memorized to the degree."
+    ] },
+    { match: /wi-?fi password|wifi/, answers: [
+      "The Wi-Fi password is on a Post-it under the router, where it has been since {year}. Also, go outside."
+    ] },
+    { match: /(are you|is this) (a |an )?(robot|ai|computer|real|human|bot)|who are you|what are you/, answers: [
+      "I'm Dad. I'm a real person who is definitely not a computer program. Now hand me the {tool}."
+    ] },
+    { match: /favorite (kid|child|son|daughter)/, answers: [
+      "I don't have a favorite. The dog, maybe. The dog never asks for money."
+    ] },
+    { match: /meaning of life|why are we here|purpose of life/, answers: [
+      "The meaning of life is a paid-off house, a full tank of gas, and a lawn the neighbors are jealous of. That's it. That's the whole thing."
+    ] },
+    { match: /(can|could) (i|we) (have|get|adopt) a (dog|cat|puppy|kitten|pet|hamster|bunny|rabbit|snake)/, answers: [
+      "A pet? Who's going to feed it? Walk it? Pay for it? That's right: me. So the answer is 'we'll see,' which means no, which means yes in about six months."
+    ] },
+    { match: /(help|do) (me with )?my homework|do my homework/, answers: [
+      "I'll help with your homework the same way my dad helped me: by asking why it isn't done yet."
+    ] },
+    { match: /tell me a joke|know any jokes|say something funny/, answers: [
+      "I don't tell jokes. I tell facts that happen to be hilarious. Ask me why the scarecrow won an award."
+    ] },
+    { match: /love you|thank(s| you),? dad/, answers: [
+      "Love you too, kiddo. Now go {chore}."
+    ] },
+    { match: /^(hi|hello|hey|yo|sup)( dad)?[!.?]*$/, answers: [
+      "Hey. Did you turn off the lights upstairs? No? Then we're not saying hello yet."
+    ] }
+  ],
+
   topics: [
     {
       name: "money",
@@ -259,6 +320,90 @@ AskDad.data = {
       ]
     },
     {
+      name: "sports",
+      keywords: ["sports", "football", "baseball", "basketball", "soccer", "hockey", "golf", "team", "score", "coach", "playoffs", "nfl", "nba", "mlb", "olympics", "fishing", "bowling", "gym"],
+      answers: [
+        "The ref is blind. That's the answer to every sports question ever asked.",
+        "Back in {year} we played {topic} outside, in the dirt, with a ball we found. And we were grateful.",
+        "I could have gone pro in {topic}. Bad knee. Also, I never tried out. But mostly the knee."
+      ],
+      realTips: [
+        "Warm up before playing and stay hydrated. Most sports injuries come from cold muscles and overuse."
+      ]
+    },
+    {
+      name: "music",
+      keywords: ["music", "song", "songs", "band", "concert", "guitar", "piano", "drums", "album", "radio", "singer", "rap", "playlist", "spotify", "headphones"],
+      answers: [
+        "Real music ended in {year}. Everything since is just noise with a subscription.",
+        "Turn that down. Actually, turn it off. Now listen to this: it's the sound of a lawn being mowed.",
+        "I saw {relative}'s band at the county fair once. Tickets were {price}. They were terrible. Best night of my life."
+      ],
+      realTips: [
+        "Keep headphone volume under about 60% and take breaks. Hearing damage from loud music adds up over time."
+      ]
+    },
+    {
+      name: "movies",
+      keywords: ["movie", "movies", "film", "show", "shows", "netflix", "series", "episode", "watch", "theater", "cinema", "actor", "actress", "cartoon", "anime", "youtube"],
+      answers: [
+        "We are not paying {price} for a movie ticket. We have a VCR at home. It works fine.",
+        "The best movie ever made came out in {year}. I fell asleep halfway through, but it was still the best.",
+        "Pause it. PAUSE IT. Who's that guy? Is he the one from the other thing?"
+      ],
+      realTips: [
+        "Before adding another streaming service, check whether the show is on one you already pay for, and cancel any you haven't opened in a month."
+      ]
+    },
+    {
+      name: "travel",
+      keywords: ["travel", "trip", "vacation", "flight", "flights", "fly", "airport", "hotel", "beach", "camping", "cruise", "passport", "roadtrip", "disney"],
+      answers: [
+        "We're leaving at 4 a.m. to beat the traffic. There is no traffic at 4 a.m. That's the point.",
+        "Vacation? We have a backyard. It has a hose. That's a water park.",
+        "The best hotel is a tent, and the best restaurant is a cooler in the trunk. Sandwiches are {price} each, payable to me."
+      ],
+      realTips: [
+        "Book flights a few weeks to a couple of months ahead, check your passport's expiry date, and keep photos of your documents on your phone."
+      ]
+    },
+    {
+      name: "holidays",
+      keywords: ["christmas", "thanksgiving", "birthday", "halloween", "holiday", "holidays", "gift", "gifts", "present", "presents", "easter", "party", "fireworks", "santa"],
+      answers: [
+        "The best gift is a savings bond. The second best is socks. You'll thank me in {number} years.",
+        "The lights go up after Thanksgiving and come down when I feel like it. So, March.",
+        "A birthday party costs {price} if you do it right: cake, the backyard, and {relative} running the grill."
+      ],
+      realTips: [
+        "Set a gift budget before the season starts and stick to it. Homemade gifts and shared experiences are often appreciated more than expensive items."
+      ]
+    },
+    {
+      name: "shopping",
+      keywords: ["shoes", "clothes", "clothing", "shirt", "jeans", "fashion", "brand", "shopping", "mall", "amazon", "order", "sneakers", "outfit", "haircut", "makeup"],
+      answers: [
+        "You need new {topic}? What's wrong with the ones from {year}? They've still got some life in them.",
+        "Brand names are just a tax on people who can't sew a patch.",
+        "The mall is where money goes to die. We're going to the hardware store instead. You can look at the nails."
+      ],
+      realTips: [
+        "Wait 24 hours before buying anything you didn't plan to buy. Most impulse purchases stop looking necessary by the next day."
+      ]
+    },
+    {
+      name: "kids",
+      keywords: ["baby", "kid", "kids", "child", "children", "teenager", "teen", "toddler", "parent", "parenting", "curfew", "bedtime", "grounded"],
+      answers: [
+        "Bedtime is 8:30. Was 8:30 in {year}, is 8:30 now. The clock doesn't care what your friends do.",
+        "When I was a kid, we didn't have {topic}. We had a stick and a strong sense of gratitude.",
+        "Grounded means grounded. No phone, no friends, no {topic}. You can have the encyclopedia. Volume G."
+      ],
+      realTips: [
+        "Consistent routines, clear expectations and enough sleep help kids of every age. For concerns about development or behavior, a pediatrician is a good first call."
+      ]
+    },
+    {
       name: "space",
       keywords: ["space", "moon", "sun", "star", "stars", "planet", "mars", "galaxy", "universe", "astronaut", "rocket", "alien", "sky"],
       answers: [
@@ -352,6 +497,35 @@ AskDad.data = {
     "How do I ask for a raise?",
     "Can I stay up late?",
     "Is cereal a soup?"
+  ],
+
+  // Offered in the search box dropdown as you type.
+  suggestedQuestions: [
+    "Are we there yet?",
+    "What's for dinner?",
+    "Can I have some money?",
+    "Can I borrow the car?",
+    "Where's the remote?",
+    "What's the wifi password?",
+    "I'm bored",
+    "Why is the thermostat set to 68?",
+    "What's the meaning of life?",
+    "Is a hot dog a sandwich?",
+    "How do I change a tire?",
+    "How do I fix a leaky faucet?",
+    "How do I get a job?",
+    "How much should I save each month?",
+    "Should I buy a house?",
+    "Should I go to college?",
+    "Why is gas so expensive?",
+    "How do I grill a steak?",
+    "How do airplanes fly?",
+    "Who invented the internet?",
+    "Why do we have to go to bed?",
+    "Can we get a dog?",
+    "How do I ask a girl out?",
+    "What should I get Mom for her birthday?",
+    "Do I need a new phone?"
   ],
 
   // Shown on the home page. No {topic} here, since nobody has asked anything yet.

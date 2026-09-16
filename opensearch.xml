@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>Ask Dad</ShortName>
+  <LongName>Ask Dad: the search engine that knows everything (it doesn't)</LongName>
+  <Description>Ask anything. Get Dad's ridiculous answer, then the real one.</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="192" height="192" type="image/png">https://heehawgmedia.github.io/ask-dad/icons/icon-192.png</Image>
+  <Url type="text/html" method="get" template="https://heehawgmedia.github.io/ask-dad/?q={searchTerms}"/>
+  <moz:SearchForm>https://heehawgmedia.github.io/ask-dad/</moz:SearchForm>
+</OpenSearchDescription>

@@ -21,7 +21,9 @@ why: [
 
 | List | Shown |
 | --- | --- |
+| `specials` | canned answers for classic questions ("Are we there yet?"), matched by regex before anything else |
 | `openers`, `byQuestionType`, `topics[].answers`, `closers` | assembled into Dad's Answer |
+| `suggestedQuestions` | offered in the search box dropdown as you type |
 | `lessons` | the "Dad's life lesson" line under his answer |
 | `facts`, `alsoAsk`, `fakeSites` | the sections under the answer |
 | `homeFacts`, `jokes` | the Dad Fact and Dad Joke cards on the home page |
@@ -77,4 +79,6 @@ Add an entry to `topics` with trigger `keywords` (single lowercase words), satir
 - No build step and no dependencies. Keep it that way so anyone can double-click `index.html`.
 - Use plain `<script>` files (not ES modules). Browsers block modules when a page is opened straight from disk.
 - Render text with `textContent`, never `innerHTML`.
+- Adding a new file the app needs offline? Add it to `ASSETS` in `sw.js` and bump the `CACHE` name.
+- Changing the icon? Edit `icons/icon.svg`, mirror the change in `tools/make-icons.py`, and run `py tools/make-icons.py`.
 - Test both modes, light and dark themes, and a phone-width window before opening a PR.

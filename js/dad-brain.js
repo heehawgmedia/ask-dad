@@ -135,8 +135,13 @@
     const type = questionType(wordList);
     const topics = matchTopic(wordList);
 
+    const lower = question.toLowerCase().replace(/’/g, "'").trim();
+    const special = data.specials.find((s) => s.match.test(lower));
+
     let body;
-    if (topics.length && rand() < 0.65) {
+    if (special) {
+      body = pick(special.answers, rand);
+    } else if (topics.length && rand() < 0.65) {
       body = pick(pick(topics, rand).answers, rand);
     } else {
       body = pick(data.byQuestionType[type], rand);
@@ -187,6 +192,21 @@
     return terms || question.trim();
   }
 
+  // Questions to offer in the search box dropdown. Empty text gives a few
+  // random starters; otherwise every typed word must appear in the question.
+  function suggestions(text) {
+    const pool = data.luckyQuestions.concat(data.suggestedQuestions);
+    const t = text.trim().toLowerCase();
+    if (!t) return shuffle(pool, Math.random).slice(0, 4);
+    const parts = t.split(/\s+/);
+    const hits = pool.filter((q) => {
+      const ql = q.toLowerCase();
+      return parts.every((p) => ql.includes(p));
+    });
+    hits.sort((a, b) => Number(b.toLowerCase().startsWith(t)) - Number(a.toLowerCase().startsWith(t)));
+    return hits.slice(0, 6);
+  }
+
   function thinkingLine() {
     const rand = Math.random;
     return fill(pick(data.thinking, rand), { topic: "that" }, rand);
@@ -217,5 +237,5 @@
     return pickFresh("joke", data.jokes);
   }
 
-  AskDad.brain = { answer, searchTerms, thinkingLine, randomTagline, luckyQuestion, homeFact, dadJoke };
+  AskDad.brain = { answer, searchTerms, suggestions, thinkingLine, randomTagline, luckyQuestion, homeFact, dadJoke };
 })(window.AskDad);

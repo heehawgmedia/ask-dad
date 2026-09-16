@@ -59,11 +59,16 @@
    * @returns {Promise<{results: Array, summary: object|null, total: number}>}
    */
   async function search(query, signal) {
+    // One request for both a full-text search and a title (prefix) search.
+    // An exact title match ("Moon", "Sky blue") beats full-text ranking,
+    // which otherwise likes to return films and songs named after the topic.
     const params = new URLSearchParams({
       action: "query",
-      list: "search",
+      list: "search|prefixsearch",
       srsearch: query,
       srlimit: "8",
+      pssearch: query,
+      pslimit: "1",
       format: "json",
       origin: "*",
       utf8: "1"
@@ -71,6 +76,7 @@
 
     const json = await getJson(WIKI_API + "?" + params, signal);
     const hits = (json.query && json.query.search) || [];
+    const prefix = (json.query && json.query.prefixsearch) || [];
 
     const results = hits.map((item) => ({
       title: item.title,
@@ -78,11 +84,31 @@
       snippet: stripHtml(item.snippet)
     }));
 
-    const summary = results.length ? await fetchSummary(results[0].title, signal) : null;
+    const exact = prefix.find((p) => p.title.toLowerCase() === query.trim().toLowerCase());
+    if (exact && !results.some((r) => r.title === exact.title)) {
+      results.unshift({ title: exact.title, url: "https://en.wikipedia.org/wiki/" + wikiPath(exact.title), snippet: "" });
+    }
+
+    const summaryTitle = exact ? exact.title : results.length ? results[0].title : null;
+    const summary = summaryTitle ? await fetchSummary(summaryTitle, signal) : null;
     const total = json.query && json.query.searchinfo ? json.query.searchinfo.totalhits : results.length;
 
     return { results, summary, total };
   }
 
-  AskDad.realSearch = { search, engines, engineUrl };
+  // Title suggestions for the search box dropdown.
+  async function suggest(query, signal) {
+    const params = new URLSearchParams({
+      action: "opensearch",
+      search: query,
+      limit: "6",
+      namespace: "0",
+      format: "json",
+      origin: "*"
+    });
+    const json = await getJson(WIKI_API + "?" + params, signal);
+    return Array.isArray(json[1]) ? json[1] : [];
+  }
+
+  AskDad.realSearch = { search, suggest, engines, engineUrl };
 })(window.AskDad);

@@ -1,7 +1,8 @@
 /*
- * Ask Dad — UI glue: the mode toggle, the home page, the search box, and
- * rendering results. Everything is rendered with textContent, never
- * innerHTML, so questions and API results can't inject markup.
+ * Ask Dad — UI glue: the mode toggle, the home page, the search box with its
+ * suggestions dropdown, and rendering results. Everything is rendered with
+ * textContent, never innerHTML, so questions and API results can't inject
+ * markup.
  */
 (function (AskDad) {
   "use strict";
@@ -12,12 +13,14 @@
     toggle: $("mode-toggle"),
     form: $("search-form"),
     input: $("q"),
+    suggest: $("suggest"),
     ask: $("ask-btn"),
     lucky: $("lucky-btn"),
     results: $("results"),
     tagline: $("tagline"),
     footer: $("footer-note"),
     toast: $("toast"),
+    install: $("install-btn"),
     logo: document.querySelector(".logo"),
     fact: $("home-fact"),
     factBtn: $("fact-btn"),
@@ -28,6 +31,9 @@
   };
 
   const MODE_KEY = "askdad.mode";
+  const RECENT_KEY = "askdad.recent";
+  const MAX_RECENT = 8;
+  const MAX_SUGGESTIONS = 7;
 
   const CLOSED_LINKS = [
     "That website is closed. Dad said so.",
@@ -76,6 +82,10 @@
     try { localStorage.setItem(key, value); } catch (e) { /* private mode etc. */ }
   }
 
+  function storageRemove(key) {
+    try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
+  }
+
   let toastTimer;
   function toast(message) {
     els.toast.textContent = message;
@@ -98,6 +108,7 @@
     clearTimeout(state.timer);
     if (state.controller) state.controller.abort();
     state.controller = null;
+    stopSpeaking();
   }
 
   function spinnerLine(text, className) {
@@ -109,6 +120,194 @@
 
   function showThinking(text) {
     els.results.replaceChildren(spinnerLine(text, "thinking"));
+  }
+
+  // ---------- recent questions (this browser only) ----------
+
+  function getRecent() {
+    try {
+      const list = JSON.parse(storageGet(RECENT_KEY));
+      return Array.isArray(list) ? list.filter((x) => typeof x === "string") : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function addRecent(question) {
+    const rest = getRecent().filter((x) => x.toLowerCase() !== question.toLowerCase());
+    storageSet(RECENT_KEY, JSON.stringify([question, ...rest].slice(0, MAX_RECENT)));
+  }
+
+  // ---------- suggestions dropdown ----------
+
+  const sug = { items: [], active: -1, timer: null, controller: null, seq: 0 };
+
+  async function collectSuggestions(text) {
+    const t = text.toLowerCase();
+    const recent = getRecent()
+      .filter((r) => !t || r.toLowerCase().includes(t))
+      .slice(0, t ? 3 : MAX_RECENT)
+      .map((r) => ({ text: r, kind: "recent" }));
+
+    const items = recent.slice();
+    const seen = new Set(recent.map((s) => s.text.toLowerCase()));
+    const add = (s, kind) => {
+      const key = s.toLowerCase();
+      if (seen.has(key) || items.length >= MAX_SUGGESTIONS) return;
+      seen.add(key);
+      items.push({ text: s, kind });
+    };
+
+    if (state.mode === "real" && t) {
+      if (sug.controller) sug.controller.abort();
+      sug.controller = new AbortController();
+      try {
+        (await AskDad.realSearch.suggest(text, sug.controller.signal)).forEach((s) => add(s, "wiki"));
+      } catch (e) { /* offline or aborted: Dad's suggestions still work */ }
+    }
+    AskDad.brain.suggestions(text).forEach((s) => add(s, "dad"));
+    return items;
+  }
+
+  function renderSuggestions(items, text) {
+    sug.items = items;
+    sug.active = -1;
+    if (!items.length) { closeSuggestions(); return; }
+
+    const icon = { recent: "🕘", wiki: "🔎", dad: "👨" };
+    const nodes = items.map((item, i) =>
+      el("li", {
+        id: `sug-${i}`,
+        role: "option",
+        class: `sug sug-${item.kind}`,
+        "aria-selected": "false",
+        onmousedown: (e) => e.preventDefault(), // keep focus in the input
+        onclick: () => chooseSuggestion(i)
+      }, [
+        el("span", { class: "sug-icon", "aria-hidden": "true", text: icon[item.kind] }),
+        el("span", { class: "sug-text", text: item.text })
+      ])
+    );
+
+    if (!text && items.some((i) => i.kind === "recent")) {
+      nodes.push(el("li", { class: "sug-foot", role: "presentation" }, [
+        el("span", { text: "Recent questions stay in this browser only." }),
+        el("button", {
+          type: "button",
+          text: "Clear history",
+          onmousedown: (e) => e.preventDefault(),
+          onclick: () => { storageRemove(RECENT_KEY); updateSuggestions(); }
+        })
+      ]));
+    }
+
+    els.suggest.replaceChildren(...nodes);
+    els.suggest.hidden = false;
+    els.input.setAttribute("aria-expanded", "true");
+  }
+
+  function closeSuggestions() {
+    clearTimeout(sug.timer);
+    sug.seq++;
+    sug.items = [];
+    sug.active = -1;
+    els.suggest.hidden = true;
+    els.suggest.replaceChildren();
+    els.input.setAttribute("aria-expanded", "false");
+    els.input.removeAttribute("aria-activedescendant");
+  }
+
+  function updateSuggestions() {
+    clearTimeout(sug.timer);
+    const text = els.input.value.trim();
+    const seq = ++sug.seq;
+    const delay = state.mode === "real" && text ? 180 : 0;
+    sug.timer = setTimeout(async () => {
+      const items = await collectSuggestions(text);
+      if (seq !== sug.seq || document.activeElement !== els.input) return;
+      renderSuggestions(items, text);
+    }, delay);
+  }
+
+  function setActive(index) {
+    const options = els.suggest.querySelectorAll('[role="option"]');
+    options.forEach((o) => o.setAttribute("aria-selected", "false"));
+    sug.active = index;
+    if (index < 0) {
+      els.input.removeAttribute("aria-activedescendant");
+      return;
+    }
+    options[index].setAttribute("aria-selected", "true");
+    els.input.setAttribute("aria-activedescendant", options[index].id);
+    els.input.value = sug.items[index].text;
+  }
+
+  function chooseSuggestion(index) {
+    const item = sug.items[index];
+    if (!item) return;
+    closeSuggestions();
+    run(item.text);
+  }
+
+  function onInputKeydown(event) {
+    if (event.key === "Escape") { closeSuggestions(); return; }
+    const n = sug.items.length;
+    if (!n || els.suggest.hidden) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActive((sug.active + 1) % n);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActive((sug.active - 1 + n) % n);
+    } else if (event.key === "Enter" && sug.active >= 0) {
+      event.preventDefault();
+      chooseSuggestion(sug.active);
+    }
+  }
+
+  // ---------- Dad's voice (speech synthesis, where the browser has it) ----------
+
+  const canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+
+  function dadVoice() {
+    const voices = speechSynthesis.getVoices();
+    const english = voices.filter((v) => /^en/i.test(v.lang));
+    return english.find((v) => /david|george|daniel|guy|mark|james|male/i.test(v.name)) || english[0] || voices[0] || null;
+  }
+
+  function stopSpeaking() {
+    if (canSpeak && speechSynthesis.speaking) speechSynthesis.cancel();
+  }
+
+  function speak(text, button) {
+    if (speechSynthesis.speaking) { speechSynthesis.cancel(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = dadVoice();
+    u.pitch = 0.75;
+    u.rate = 0.92;
+    const idle = () => { button.textContent = "🔊 Hear it from Dad"; button.classList.remove("speaking"); };
+    u.onstart = () => { button.textContent = "⏹ Okay Dad, stop"; button.classList.add("speaking"); };
+    u.onend = idle;
+    u.onerror = idle;
+    speechSynthesis.speak(u);
+  }
+
+  if (canSpeak) speechSynthesis.getVoices(); // warms the voice list in Chrome
+
+  // ---------- share ----------
+
+  async function shareAnswer() {
+    const url = location.href;
+    const title = `Ask Dad: ${state.question}`;
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); return; } catch (e) { if (e.name === "AbortError") return; }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Link copied. Go show your mother.");
+    } catch (e) {
+      toast(url);
+    }
   }
 
   // ---------- home page ----------
@@ -180,6 +379,8 @@
 
     state.question = question;
     els.input.value = question;
+    closeSuggestions();
+    addRecent(question);
     document.body.classList.add("has-results");
     updateUrl();
 
@@ -259,9 +460,14 @@
 
   // Renders Dad's answer and returns the (still loading) Real Answer card.
   function renderDad(a) {
+    const spoken = `${a.opener} ${a.body} ${a.closer}`;
+    const speakBtn = canSpeak
+      ? el("button", { type: "button", class: "btn", text: "🔊 Hear it from Dad", onclick: () => speak(spoken, speakBtn) })
+      : null;
+
     const answerCard = el("section", { class: "card", "aria-label": "Dad's answer" }, [
       el("h2", { text: "👨 Dad's Answer" }),
-      el("p", { class: "dad-answer", text: `${a.opener} ${a.body} ${a.closer}` }),
+      el("p", { class: "dad-answer", text: spoken }),
       el("p", { class: "signoff", text: a.signoff }),
       el("p", { class: "lesson" }, [el("strong", { text: "Dad's life lesson: " }), a.lesson]),
       el("div", { class: "confidence" }, [
@@ -270,7 +476,9 @@
         el("strong", { text: `${a.confidence}%` })
       ]),
       el("div", { class: "card-actions" }, [
-        el("button", { type: "button", class: "btn", text: "🔁 Ask again", onclick: () => run(state.question, { again: true }) })
+        el("button", { type: "button", class: "btn", text: "🔁 Ask again", onclick: () => run(state.question, { again: true }) }),
+        speakBtn,
+        el("button", { type: "button", class: "btn", text: "📤 Share", onclick: shareAnswer })
       ])
     ]);
 
@@ -386,7 +594,7 @@
           el("article", { class: "result" }, [
             el("div", { class: "result-url", text: `en.wikipedia.org › wiki › ${r.title}` }),
             externalLink(r.url, r.title, "result-title"),
-            el("p", { class: "result-snippet", text: `${r.snippet}…` })
+            r.snippet ? el("p", { class: "result-snippet", text: `${r.snippet}…` }) : null
           ])
         );
       }
@@ -406,12 +614,38 @@
     );
   }
 
+  // ---------- install as an app ----------
+
+  let installPrompt = null;
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    els.install.hidden = false;
+  });
+
+  els.install.addEventListener("click", async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    els.install.hidden = true;
+  });
+
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* offline mode is a bonus, not a requirement */ });
+  }
+
   // ---------- events ----------
 
   els.form.addEventListener("submit", (event) => {
     event.preventDefault();
     run(els.input.value, { again: true });
   });
+
+  els.input.addEventListener("input", updateSuggestions);
+  els.input.addEventListener("focus", updateSuggestions);
+  els.input.addEventListener("keydown", onInputKeydown);
+  els.input.addEventListener("blur", () => setTimeout(closeSuggestions, 150));
 
   els.toggle.addEventListener("change", () => setMode(els.toggle.checked ? "real" : "dad"));
 

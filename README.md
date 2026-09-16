@@ -33,18 +33,36 @@ Then open http://localhost:8000.
 
 ## Features
 
-- 🎭 **Satire engine**: works out what kind of question you asked (why/how/what/yes-no...) and what it's about, then builds an answer from a community joke database.
+- 🎭 **Satire engine**: works out what kind of question you asked (why/how/what/yes-no...) and what it's about, then builds an answer from a community joke database. Classics like "Are we there yet?" and "Can I borrow the car?" get Dad's best material.
 - ✅ **The Real Answer**: every Dad answer is followed by genuine, practical information.
+- 💡 **Search suggestions**: questions to try as you type, your recent questions (kept in your browser only, one click to clear), and live Wikipedia title suggestions in Real Search.
+- 🔊 **Hear it from Dad**: reads the answer aloud using your browser's built-in voices.
+- 📤 **Share**: copies a link straight to that answer.
 - 🔁 **Ask again**: the same question always gives the same first answer. Hit *Ask again* for a new one.
 - 🔎 **Real Search toggle**: live Wikipedia results, with links out to real search engines.
 - 😂 **Dad Facts and Dad Jokes** on the home page.
+- 📥 **Installable**: add it to your phone or desktop as an app. Dad Mode keeps working offline.
 - 🔗 **Shareable links**: `index.html?q=why+is+the+sky+blue` or `index.html?q=moon+landing&mode=real`.
-- 🌗 Light and dark themes, keyboard friendly (press `/` to focus the search box), mobile friendly.
-- 🔒 No tracking, no cookies, no analytics. Your mode preference is saved in your own browser only.
+- 🌗 Light and dark themes, keyboard friendly (press `/` to focus the search box, arrow keys in suggestions), mobile friendly.
+- 🔒 No tracking, no cookies, no analytics.
+
+## Install it as an app
+
+Open https://heehawgmedia.github.io/ask-dad/ and:
+
+- **Phone:** use your browser's *Add to Home Screen* option.
+- **Desktop (Chrome/Edge):** click **Install Ask Dad** in the footer, or the install icon in the address bar.
+
+Dad's answers, facts and jokes work offline once installed. The Real Answer needs a connection.
 
 ## Use it as your browser's search engine
 
-Add a custom search engine in your browser settings with this URL:
+Ask Dad publishes an [OpenSearch](opensearch.xml) description, so most browsers can add it in one step:
+
+- **Firefox:** visit the site, then right-click the address bar and choose *Add "Ask Dad"*.
+- **Chrome/Edge:** visit the site once, then pick it from *Settings → Search engine → Manage search engines* (it appears under inactive shortcuts).
+
+Or add it by hand with this URL:
 
 ```
 https://heehawgmedia.github.io/ask-dad/?q=%s
@@ -63,11 +81,16 @@ Add `&mode=real` if you want real results by default. Running it locally? Use `h
 ask-dad/
 ├── index.html          the page
 ├── css/style.css       all styling (light + dark)
-└── js/
-    ├── responses.js    the joke database + real tips  ← easiest place to contribute!
-    ├── dad-brain.js    the satire engine
-    ├── real-search.js  Wikipedia + search engine handoff
-    └── app.js          UI, toggle, rendering
+├── js/
+│   ├── responses.js    the joke database + real tips  ← easiest place to contribute!
+│   ├── dad-brain.js    the satire engine
+│   ├── real-search.js  Wikipedia + search engine handoff
+│   └── app.js          UI, toggle, suggestions, rendering
+├── sw.js               service worker (installable app, offline Dad Mode)
+├── manifest.json       web app manifest
+├── opensearch.xml      lets browsers add Ask Dad as a search engine
+├── icons/              app icons (icon.svg is the source of truth)
+└── tools/make-icons.py regenerates the PNG icons, no dependencies
 ```
 
 ## Contributing
@@ -76,11 +99,12 @@ The best contribution is a better dad joke. Open `js/responses.js`, add a line, 
 
 ## Roadmap ideas
 
-- [ ] More topic categories (sports, music, holidays...)
-- [ ] Text-to-speech in a Dad voice
+- [x] More topic categories (sports, music, holidays...)
+- [x] Text-to-speech in a Dad voice
+- [x] Installable app with offline Dad Mode
 - [ ] "Grandpa Mode" (even older stories, even less relevant)
 - [ ] Translations: Ask Papa, Pregúntale a Papá, Frag Papa
-- [ ] Browser extension / installable desktop app
+- [ ] Browser extension
 
 ## License
 

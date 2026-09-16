@@ -4,8 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ask Dad</title>
-  <meta name="description" content="The open source search engine that knows everything. (It doesn't.)">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨</text></svg>">
+  <meta name="description" content="The open source search engine that knows everything. (It doesn't.) Ask anything, get Dad's answer, then the real one.">
+  <meta name="theme-color" content="#d68910">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="search" type="application/opensearchdescription+xml" title="Ask Dad" href="opensearch.xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-mode="dad">
@@ -27,8 +31,10 @@
       <form id="search-form" class="search" role="search" autocomplete="off">
         <div class="search-box">
           <span class="search-icon" aria-hidden="true">🔍</span>
-          <input id="q" name="q" type="search" placeholder="Ask Dad anything..." aria-label="Your question" required>
+          <input id="q" name="q" type="search" placeholder="Ask Dad anything..." aria-label="Your question"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest" required>
         </div>
+        <ul id="suggest" class="suggest" role="listbox" aria-label="Suggestions" hidden></ul>
         <div class="buttons">
           <button type="submit" id="ask-btn">Ask Dad</button>
           <button type="button" id="lucky-btn">I'm Feeling Grounded</button>
@@ -59,8 +65,12 @@
   </main>
 
   <footer class="footer">
-    <p id="footer-note">Dad Mode: every answer is 100% satire. Do not use for homework, taxes, or surgery.</p>
-    <p class="footer-small">Ask Dad is open source · MIT License</p>
+    <p id="footer-note">Dad Mode: Dad's answer is 100% satire. The real answer is right underneath it.</p>
+    <p class="footer-links">
+      <button type="button" class="btn btn-small" id="install-btn" hidden>📥 Install Ask Dad</button>
+      <a class="btn btn-small" href="https://github.com/heehawgmedia/ask-dad" target="_blank" rel="noopener noreferrer">Open source on GitHub ↗</a>
+    </p>
+    <p class="footer-small">MIT License · No tracking, no cookies, no nonsense.</p>
   </footer>
 
   <div id="toast" class="toast" role="status" hidden></div>
