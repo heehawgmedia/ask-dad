@@ -219,7 +219,15 @@
     els.input.removeAttribute("aria-activedescendant");
   }
 
+  // Focus the search box without popping the dropdown open (page load, logo click).
+  function focusQuietly() {
+    sug.quiet = true;
+    els.input.focus();
+    sug.quiet = false;
+  }
+
   function updateSuggestions() {
+    if (sug.quiet) return;
     clearTimeout(sug.timer);
     const text = els.input.value.trim();
     const seq = ++sug.seq;
@@ -391,7 +399,7 @@
     showFact();
     showJoke();
     showNews();
-    els.input.focus();
+    focusQuietly();
   }
 
   // ---------- mode ----------
@@ -731,9 +739,12 @@
   document.addEventListener("keydown", (event) => {
     if (event.key === "/" && document.activeElement !== els.input) {
       event.preventDefault();
-      els.input.focus();
+      focusQuietly();
     }
   });
+
+  // Clicking into an already-focused box should still offer suggestions.
+  els.input.addEventListener("click", updateSuggestions);
 
   // ---------- start ----------
 
@@ -747,5 +758,5 @@
 
   const initialQuestion = params.get("q");
   if (initialQuestion) run(initialQuestion);
-  else els.input.focus();
+  else focusQuietly();
 })(window.AskDad);
