@@ -103,10 +103,14 @@
     const replacers = {
       topic: () => ctx.topic,
       Topic: () => capitalise(ctx.topic),
+      TopicTitle: () => ctx.topic.split(" ").map(capitalise).join(" "),
       number: () => pick([3, 7, 12, 17, 42, 68, 99, 212, 1138, 4000], rand).toString(),
+      small: () => pick([3, 4, 5, 6, 7, 8, 9], rand).toString(),
+      big: () => pick([40, 68, 99, 212, 400, 1138, 4000], rand).toString(),
       year: () => String(1952 + Math.floor(rand() * 43)),
       place: () => pick(data.places, rand),
       relative: () => pick(data.relatives, rand),
+      Relative: () => capitalise(pick(data.relatives, rand)),
       item: () => pick(data.items, rand),
       Item: () => capitalise(pick(data.items, rand)),
       tool: () => pick(data.tools, rand),
@@ -165,6 +169,7 @@
       confidence: 100 + Math.floor(rand() * 400),
       resultCount: (Math.floor(rand() * 9000) + 1000).toLocaleString() + ",000,000",
       facts: shuffle(data.facts, rand).slice(0, 3).map(f),
+      news: shuffle(data.newsHeadlines, rand).slice(0, 3).map((h) => ({ kicker: h.kicker, text: f(h.text) })),
       alsoAsk: shuffle(data.alsoAsk, rand).slice(0, 4).map(f),
       results: shuffle(data.fakeSites, rand).slice(0, 5).map((s) => ({
         url: fill(s.url, slugCtx, rand),
@@ -237,5 +242,29 @@
     return pickFresh("joke", data.jokes);
   }
 
-  AskDad.brain = { answer, searchTerms, suggestions, thinkingLine, randomTagline, luckyQuestion, homeFact, dadJoke };
+  // The Daily Dad. Fills an article's placeholders; the same {year} inside
+  // one article stays consistent so a story doesn't contradict itself.
+  function fillArticle(article) {
+    const rand = seededRandom(hash(article.id) + Math.floor(Math.random() * 1e6));
+    const year = String(1952 + Math.floor(rand() * 43));
+    const ctx = { topic: "that" };
+    const f = (t) => fill(t.replace(/\{year\}/g, year), ctx, rand);
+    return {
+      id: article.id,
+      kicker: article.kicker,
+      headline: f(article.headline),
+      dateline: f(article.dateline).toUpperCase(),
+      body: article.body.map(f),
+      quote: f(article.quote)
+    };
+  }
+
+  // A front page: `count` articles, with `firstId` (from a shared link) on top.
+  function newsFeed(count, firstId) {
+    const first = data.news.find((a) => a.id === firstId);
+    const rest = shuffle(data.news.filter((a) => a !== first), Math.random);
+    return (first ? [first] : []).concat(rest).slice(0, count).map(fillArticle);
+  }
+
+  AskDad.brain = { answer, searchTerms, suggestions, thinkingLine, randomTagline, luckyQuestion, homeFact, dadJoke, newsFeed };
 })(window.AskDad);

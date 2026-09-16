@@ -589,6 +589,93 @@ body.has-results .home-extras { display: none; }
   margin: 10px 0 !important;
 }
 
+/* ---------- The Daily Dad (home page) & Dad News (results) ---------- */
+
+.news {
+  width: 100%;
+  max-width: 760px;
+  margin-top: 44px;
+}
+
+body.has-results .news { display: none; }
+
+.news-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  padding-bottom: 8px;
+  border-bottom: 3px double var(--text);
+}
+
+.news-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.7rem;
+  letter-spacing: -0.5px;
+}
+
+.news-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.article {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.kicker {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--switch-off);
+}
+
+.article-title {
+  margin: 4px 0 10px;
+  font-family: var(--display);
+  font-size: 1.4rem;
+  line-height: 1.25;
+}
+
+.article p { margin: 0 0 10px; }
+
+.article-dateline {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.article-quote {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.article .card-actions { margin-top: 4px; }
+
+.news-more {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.headlines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.headlines li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--display);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
 /* ---------- Footer & toast ---------- */
 
 .footer {

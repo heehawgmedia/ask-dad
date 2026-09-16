@@ -4,7 +4,9 @@ Thanks for helping Dad be wrong about more things!
 
 ## Who is Dad?
 
-Dad is an old-school traditionalist. He pays cash, distrusts subscriptions and apps, gets up at 5 a.m., believes in hard work, firm handshakes and fixing things yourself, and thinks everything was cheaper and better "back in my day". He is lovingly, confidently wrong about almost everything. The joke is always on Dad.
+Dad is an old-school traditionalist. He pays cash, distrusts subscriptions and apps, gets up at 5 a.m., believes in hard work, firm handshakes and fixing things yourself, and thinks everything was cheaper and better "back in my day". He is lovingly, confidently wrong about almost everything, and sarcastic about it. The joke is always on Dad.
+
+**The voice** is deadpan satire news. Think fake local headlines and straight-faced reporting of absurd things: "Local Dad...", "Report:", "sources say", "a study of one man on a porch finds". Escalate calmly, end on a kicker, and let every answer drift toward gas prices, the thermostat, or the lawn. Sarcasm, yes. Meanness, no.
 
 ## Adding jokes (no coding experience needed)
 
@@ -27,18 +29,21 @@ why: [
 | `lessons` | the "Dad's life lesson" line under his answer |
 | `facts`, `alsoAsk`, `fakeSites` | the sections under the answer |
 | `homeFacts`, `jokes` | the Dad Fact and Dad Joke cards on the home page |
+| `news` | The Daily Dad articles on the home page (`id`, `kicker`, `headline`, `dateline`, two `body` paragraphs, a closing `quote`) |
+| `newsHeadlines` | the three Dad News headlines under every answer (use `{Topic}`) |
 | `topics[].realTips` | **The Real Answer** card. Real advice only, see below. |
 
 ### Placeholders
 
 | Placeholder | Becomes |
 | --- | --- |
-| `{topic}` / `{Topic}` | what the question is about ("the sky blue" / "The sky blue") |
+| `{topic}` / `{Topic}` / `{TopicTitle}` | what the question is about ("sky blue" / "Sky blue" / "Sky Blue", for headlines) |
 | `{number}` | a suspiciously specific number |
+| `{small}` / `{big}` | a small number (3–9) / a big one (40–4000) |
 | `{year}` | a year from Dad's glory days (1952–1994) |
 | `{price}` | what things cost back then ("a nickel", "two bits") |
 | `{place}` | somewhere Dad has definitely been |
-| `{relative}` | "your Uncle Gary" and friends |
+| `{relative}` / `{Relative}` | "your Uncle Gary" and friends |
 | `{item}` / `{Item}` | something from the junk drawer |
 | `{tool}` | something from the garage |
 | `{chore}` / `{Chore}` | a chore you should be doing instead |
@@ -69,7 +74,7 @@ Add an entry to `topics` with trigger `keywords` (single lowercase words), satir
 ## House rules
 
 1. **Family-friendly.** Dad jokes, not late-night jokes.
-2. **Punch at Dad, not at people.** No jokes about real people, groups, religion or tragedies.
+2. **Punch at Dad, not at people.** No jokes about real people, groups, religion or tragedies. News stories use real datelines and made-up people; never a real name.
 3. **No partisan politics.** Dad's "conservative" is thermostats, cash and lawn care, not parties or candidates.
 4. **Obviously ridiculous.** Satire should never be mistaken for real advice, especially about health, money or safety. That's what The Real Answer is for.
 5. **Keep Real Search real.** Satire stays out of Real Search mode and out of `realTips`.

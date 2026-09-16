@@ -27,7 +27,9 @@
     jokeSetup: $("joke-setup"),
     jokePunchline: $("joke-punchline"),
     jokeReveal: $("joke-reveal"),
-    jokeBtn: $("joke-btn")
+    jokeBtn: $("joke-btn"),
+    newsList: $("news-list"),
+    newsMore: $("news-more")
   };
 
   const MODE_KEY = "askdad.mode";
@@ -296,18 +298,26 @@
 
   // ---------- share ----------
 
-  async function shareAnswer() {
-    const url = location.href;
-    const title = `Ask Dad: ${state.question}`;
+  async function shareLink(url, title, copiedMessage) {
     if (navigator.share) {
       try { await navigator.share({ title, url }); return; } catch (e) { if (e.name === "AbortError") return; }
     }
     try {
       await navigator.clipboard.writeText(url);
-      toast("Link copied. Go show your mother.");
+      toast(copiedMessage);
     } catch (e) {
       toast(url);
     }
+  }
+
+  function shareAnswer() {
+    shareLink(location.href, `Ask Dad: ${state.question}`, "Link copied. Go show your mother.");
+  }
+
+  function newsUrl(id) {
+    const url = new URL(location.href);
+    url.search = "?news=" + encodeURIComponent(id);
+    return url.toString();
   }
 
   // ---------- home page ----------
@@ -330,6 +340,46 @@
     els.jokeBtn.focus();
   }
 
+  function articleCard(a, expanded) {
+    const more = el("div", { class: "article-more" }, [
+      ...a.body.slice(1).map((p) => el("p", { text: p })),
+      el("p", { class: "article-quote", text: a.quote })
+    ]);
+    more.hidden = !expanded;
+
+    const readBtn = el("button", {
+      type: "button",
+      class: "btn btn-small",
+      text: expanded ? "Less" : "Read the full story",
+      onclick: () => {
+        more.hidden = !more.hidden;
+        readBtn.textContent = more.hidden ? "Read the full story" : "Less";
+      }
+    });
+
+    return el("article", { class: "article", id: `news-${a.id}` }, [
+      el("span", { class: "kicker", text: a.kicker }),
+      el("h3", { class: "article-title", text: a.headline }),
+      el("p", null, [el("span", { class: "article-dateline", text: `${a.dateline} — ` }), a.body[0]]),
+      more,
+      el("div", { class: "card-actions" }, [
+        readBtn,
+        el("button", {
+          type: "button",
+          class: "btn btn-small",
+          text: "📤 Share",
+          onclick: () => shareLink(newsUrl(a.id), a.headline, "Story link copied. Forward it to the group chat.")
+        })
+      ])
+    ]);
+  }
+
+  // Three stories on the front page; a shared ?news= link puts that story first, expanded.
+  function showNews(firstId) {
+    const articles = AskDad.brain.newsFeed(3, firstId);
+    els.newsList.replaceChildren(...articles.map((a) => articleCard(a, Boolean(firstId) && a.id === firstId)));
+  }
+
   function goHome() {
     cancelPending();
     state.token++;
@@ -340,6 +390,7 @@
     updateUrl();
     showFact();
     showJoke();
+    showNews();
     els.input.focus();
   }
 
@@ -506,10 +557,17 @@
       ])
     );
 
+    const headlines = el("ul", { class: "headlines" },
+      a.news.map((h) => el("li", null, [el("span", { class: "kicker", text: h.kicker }), h.text]))
+    );
+
     els.results.replaceChildren(
       el("p", { class: "stats", text: `About ${a.resultCount} results (0.00 seconds of actual thought)` }),
       answerCard,
       realSlot,
+      el("h3", { class: "section-title", text: "📰 Dad News" }),
+      el("p", { class: "satire-note", text: "Satire headlines from The Daily Dad. None of this happened." }),
+      headlines,
       el("h3", { class: "section-title", text: "People also ask Dad" }),
       alsoAsk,
       el("h3", { class: "section-title", text: "Dad Facts™" }),
@@ -667,6 +725,7 @@
   els.factBtn.addEventListener("click", showFact);
   els.jokeBtn.addEventListener("click", showJoke);
   els.jokeReveal.addEventListener("click", revealPunchline);
+  els.newsMore.addEventListener("click", () => showNews());
 
   // Press "/" anywhere to jump to the search box.
   document.addEventListener("keydown", (event) => {
@@ -684,6 +743,7 @@
   setMode(initialMode, { silent: true });
   showFact();
   showJoke();
+  showNews(params.get("news") || undefined);
 
   const initialQuestion = params.get("q");
   if (initialQuestion) run(initialQuestion);

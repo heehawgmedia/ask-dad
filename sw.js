@@ -4,7 +4,7 @@
  * show up right away) with the cache as the offline fallback. Wikipedia and
  * other cross-origin requests are left alone.
  */
-const CACHE = "askdad-v1";
+const CACHE = "askdad-v2";
 const ASSETS = [
   "./",
   "./index.html",
